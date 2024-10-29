@@ -7,7 +7,6 @@
  *
  * @author Jasper
  */
-
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.ArrayList;
@@ -30,9 +29,10 @@ public class HotelReservationSystem {
             System.out.println("  HOTEL RESERVATION SYSTEM");
             System.out.println("============================\n");
             System.out.println("         Main Menu\n");
-            System.out.println("   Check In           [1]");
-            System.out.println("   Check Out          [2]");
-            System.out.println("   View Reservations  [3]");
+            System.out.println("   Reservation        [1]");
+            System.out.println("   Check In           [2]");
+            System.out.println("   Check Out          [3]");
+            System.out.println("   View Reservations  [4]");
             System.out.println("   Exit               [0]");
             System.out.print("\nEnter your choice: ");
 
@@ -40,15 +40,18 @@ public class HotelReservationSystem {
                 int choice = scanner.nextInt();
                 switch (choice) {
                     case 1:
-                        checkIn(scanner);
+                        reserve(scanner);
                         break;
                     case 2:
+                        checkIn(scanner);
+                        break;
+                    case 3:
                         String roomID = checkOut(scanner);
-                         if (roomID != null) {
+                        if (roomID != null) {
                             updateRoomArray(roomID);
                         }
                         break;
-                    case 3:
+                    case 4:
                         viewReservationDetails(scanner);
                         break;
                     case 0:
@@ -66,14 +69,14 @@ public class HotelReservationSystem {
         }
     }
 
-    private static void checkIn(Scanner scanner) {
+    private static void reserve(Scanner scanner) {
         if (reservationCount >= reservations.length) {
             System.out.println("Error: Reservation limit reached.");
             return;
         }
 
         System.out.println("\n============================");
-        System.out.println("         Check In");
+        System.out.println("         Reservation");
         System.out.println("============================\n");
         System.out.println("      Single Room   [1]");
         System.out.println("      Double Room   [2]");
@@ -94,10 +97,41 @@ public class HotelReservationSystem {
             reservations[reservationCount] = new DoubleRoom(guestName, roomID);
         }
 
-        reservations[reservationCount].checkIn();
         reservationCount++;
-        System.out.println("Room " + roomID + " reserved and checked in successfully.");       
+        System.out.println("Room " + roomID + " reserved successfully.");
         displayAvailableRooms(roomType);
+    }
+
+    private static void checkIn(Scanner scanner) {
+        if (reservationCount == 0) {
+            System.out.println("No reservations available.\n");
+            return;
+        }
+
+        System.out.println("\n============================");
+        System.out.println("          Check In");
+        System.out.println("============================\n");
+        System.out.println("Index\tRoom ID");
+
+        List<Integer> availableIndices = new ArrayList<>();
+        for (int i = 0; i < reservationCount; i++) {
+            if (!reservations[i].isCheckedIn) {  // Check for unchecked-in reservations
+                System.out.println(availableIndices.size() + "\t" + reservations[i].roomID);
+                availableIndices.add(i);
+            }
+        }
+
+        if (availableIndices.isEmpty()) {
+            System.out.println("All reservations are currently checked in.\n");
+            return;
+        }
+
+        System.out.print("\nEnter Reservation Index: ");
+        int index = getValidIntInput(scanner, 0, availableIndices.size() - 1, "ERROR: Enter a valid reservation index: ");
+        int actualIndex = availableIndices.get(index);
+
+        reservations[actualIndex].checkIn();
+        System.out.println("\nRoom " + reservations[actualIndex].roomID + " checked in successfully.");
     }
 
     private static String checkOut(Scanner scanner) {
@@ -113,9 +147,9 @@ public class HotelReservationSystem {
         System.out.println("Index\tRoom ID");
         List<Integer> availableIndices = new ArrayList<>();
         for (int i = 0; i < reservationCount; i++) {
-            if (reservations[i].isCheckedIn) { 
+            if (reservations[i].isCheckedIn) {
                 System.out.println(availableIndices.size() + "\t" + reservations[i].roomID);
-                availableIndices.add(i); 
+                availableIndices.add(i);
             }
         }
 
@@ -126,8 +160,8 @@ public class HotelReservationSystem {
         System.out.print("\nEnter Reservation Index: ");
 
         int index = getValidIntInput(scanner, 0, availableIndices.size() - 1, "ERROR: Enter a valid reservation index: ");
-        int actualIndex = availableIndices.get(index); 
-        
+        int actualIndex = availableIndices.get(index);
+
         String roomID = reservations[actualIndex].roomID;
         reservations[actualIndex].checkOut();
         removeReservation(actualIndex);
@@ -136,7 +170,7 @@ public class HotelReservationSystem {
 
     private static void removeReservation(int index) {
         for (int i = index; i < reservationCount - 1; i++) {
-            reservations[i] = reservations[i + 1]; 
+            reservations[i] = reservations[i + 1];
         }
         reservations[--reservationCount] = null;
     }
@@ -151,23 +185,15 @@ public class HotelReservationSystem {
         System.out.println("  View Reservation Details");
         System.out.println("============================\n");
         System.out.println("Index\tRoom ID");
-        List<Integer> availableIndices = new ArrayList<>();
+
         for (int i = 0; i < reservationCount; i++) {
-            if (reservations[i].isCheckedIn) { 
-                System.out.println(availableIndices.size() + "\t" + reservations[i].roomID);
-                availableIndices.add(i); 
-            }
+            System.out.println(i + "\t" + reservations[i].roomID);
         }
 
-        if (availableIndices.isEmpty()) {
-            System.out.println("No rooms are currently checked in.");
-            return;
-        }
         System.out.print("\nEnter Reservation Index: ");
-        int index = getValidIntInput(scanner, 0, availableIndices.size() - 1, "ERROR: Enter a valid reservation index: ");
-        int actualIndex = availableIndices.get(index); 
+        int index = getValidIntInput(scanner, 0, reservationCount - 1, "ERROR: Enter a valid reservation index: ");
 
-        System.out.println(reservations[actualIndex].getDetails());
+        System.out.println(reservations[index].getDetails());
     }
 
     private static int getValidIntInput(Scanner scanner, int min, int max, String errorMessage) {
@@ -183,10 +209,10 @@ public class HotelReservationSystem {
                 }
             } catch (InputMismatchException e) {
                 System.out.print(errorMessage);
-                scanner.next(); 
+                scanner.next();
             }
         }
-        scanner.nextLine(); 
+        scanner.nextLine();
         return input;
     }
 
@@ -198,13 +224,13 @@ public class HotelReservationSystem {
             }
             System.out.println("|");
         } else {
-            System.out.println("Available Double Rooms:");
+            System.out.println("\nAvailable Double Rooms:");
             for (String room : doubleRooms) {
                 System.out.print("| " + room + " ");
             }
             System.out.println("|");
         }
-        System.out.println(); 
+        System.out.println();
     }
 
     private static String getValidRoomID(Scanner scanner, int roomType) {
@@ -261,5 +287,4 @@ public class HotelReservationSystem {
             }
         }
     }
-
 }
